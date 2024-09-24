@@ -62,4 +62,36 @@ class VAE_Encoder(nn.Sequential):
 
 
     def forward(self, x: torch.Tensor, noise: torch.Tensor) -> torch.Tensor:
-        pass
+        # x:     (batch_size, channel,      height,     width)
+        # noise: (batch_size, out_channels, height / 8, width / 8)
+        
+        # run sequentially all the implemented modules
+        for module in self:
+            # For the modules with padding equal to 2,
+            # we want to specify it manually
+            if getattr(module, "stride", None) == (2, 2):
+                # (pad_left, pad_right, pad_top, pad_bottom)
+                x = F.pad(x, (0, 1, 0, 1))
+            x = module()
+
+        # (batch_size, 8, height / 8, width / 8) -> 2 tensors of shape (batch_size, 4, height / 8, width / 8) : mean and variance
+        mean, log_variance = torch.chunk(x, 2, dim=1)
+
+        # we need to clamp the variance so that it does not become very small
+        # we want it to be between a range of values that we want, does not change the shape of the vectors
+        log_variance = torch.clamp(log_variance, -30, 20)
+
+        # (batch_size, 4, height / 8, width / 8) -> (batch_size, 4, height / 8, width / 8)
+        variance = log_variance.exp()
+
+        # (batch_size, 4, height / 8, width / 8) -> (batch_size, 4, height / 8, width / 8)
+        stdev = variance.sqrt()
+
+        # N(0, 1) -> N(mean, variance)=X?
+        # X = mean + stdev * z
+        x = mean + stdev * noise
+
+        # Scale the output by a constant
+        x *= 0.18215
+
+        return x
