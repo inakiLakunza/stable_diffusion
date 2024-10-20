@@ -7,11 +7,11 @@ from attention import SelfAttention
 
 class CLIPEmbedding(nn.Module):
 
-    def __init__(self, n_vocab: int, n_embd: int, n_tokens: int):
+    def __init__(self, n_vocab: int, n_embd: int, n_token: int):
         super().__init__()
 
         self.token_embedding = nn.Embedding(n_vocab, n_embd)
-        self.position_embedding = nn.Parameter(torch.zeros(n_tokens, n_embd))
+        self.position_embedding = nn.Parameter(torch.zeros((n_token, n_embd)))
 
 
     def forward(self, tokens):
@@ -44,7 +44,7 @@ class CLIPLayer(nn.Module):
 
         x = self.layernorm_1(x)
 
-        x = self.attention(x, causal_maks=True)
+        x = self.attention(x, causal_mask=True)
 
         x += residue
 
@@ -68,13 +68,14 @@ class CLIPLayer(nn.Module):
 class CLIP(nn.Module):
 
     def __init__(self):
+        super().__init__()
         # vocab_size, embedding_size, max_sequence_length = 49408, 768, 77
         self.embedding = CLIPEmbedding(49408, 768, 77)
 
-        self.layers = nn.Module(
+        self.layers = nn.ModuleList([
             # n_attention_heads, embedding_size = 12, 768
             CLIPLayer(12, 768) for i in range(12)
-        )
+        ])
 
         self.layernorm = nn.LayerNorm(768)
 

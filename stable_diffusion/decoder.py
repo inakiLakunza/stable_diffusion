@@ -19,13 +19,15 @@ class VAE_AttentionBlock(nn.Module):
         # x: (batch_size, features, height, width)
 
         residue = x
+        # (Batch_Size, Features, Height, Width) -> (Batch_Size, Features, Height, Width)
+        x = self.groupnorm(x)
 
         n, c, h, w = x.shape
 
         # We need to do a reshaping and a transposition to apply attention
 
         # (batch_size, features, height, width) -> (batch_size, features, height * width)
-        x = x.view(n, c, h * w)
+        x = x.view((n, c, h * w))
 
         # (batch_size, features, height * width) -> (batch_size, height * width, features)
         x = x.transpose(-1, -2)
@@ -37,7 +39,7 @@ class VAE_AttentionBlock(nn.Module):
         x = x.transpose(-1, -2)
 
         # (batch_size, features, height * width) -> (batch_size, features, height, width)
-        x = x.view(n, c, h, w)
+        x = x.view((n, c, h, w))
 
         x += residue
         
@@ -112,7 +114,7 @@ class VAE_Decoder(nn.Sequential):
             VAE_ResidualBlock(512, 512),
 
             # (batch_size, 512, height / 4, width / 4) -> (batch_size, 512, height / 2, width / 2)
-            nn.Upsample(scale_facto=2),
+            nn.Upsample(scale_factor=2),
 
             nn.Conv2d(512, 512, kernel_size=3, padding=1),
 
@@ -122,6 +124,9 @@ class VAE_Decoder(nn.Sequential):
 
             # (batch_size, 256, height / 2, width / 2) -> (batch_size, 256, height, width)
             nn.Upsample(scale_factor=2),
+
+        
+            nn.Conv2d(256, 256, kernel_size=3, padding=1),
 
             VAE_ResidualBlock(256, 128),
             VAE_ResidualBlock(128, 128),

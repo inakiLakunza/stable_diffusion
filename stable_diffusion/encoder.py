@@ -18,7 +18,7 @@ class VAE_Encoder(nn.Sequential):
             VAE_ResidualBlock(128, 128),
 
             # (batch_size, 128, height, width) -> (batch_size, 128, height / 2, width / 2)
-            nn.Conv2d(128, 128, kernel_size=3, stride=2, padding=1),
+            nn.Conv2d(128, 128, kernel_size=3, stride=2, padding=0),
 
             # (batch_size, 128, height / 2, width / 2) -> (batch_size, 256, height / 2, width / 2)
             VAE_ResidualBlock(128, 256),
@@ -54,10 +54,10 @@ class VAE_Encoder(nn.Sequential):
             nn.SiLU(),
 
             # (batch_size, 512, height / 8, width / 8) -> (batch_size, 8, height / 8, width / 8)
-            nn.Conv2d(512, 8, kernel_size=3, stride=1, padding=1),
+            nn.Conv2d(512, 8, kernel_size=3, padding=1),
 
             # (batch_size, 8, height / 8, width / 8) -> (batch_size, 512, height / 8, width / 8)
-            nn.Conv2d(8, 8, kernel_size=1, stride=1, padding=0),
+            nn.Conv2d(8, 8, kernel_size=1, padding=0),
         )
 
 
